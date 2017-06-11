@@ -86,6 +86,10 @@ public class FreeCam : Script
 	{
 		return PlayerObjectPairs.ContainsKey(player);
 	}
+	public NetHandle getFreecamObject(Client player)
+	{
+		if(PlayerObjectPairs.ContainsKey(player))return PlayerObjectPairs[player];
+	}
 	[Command("freecam")]
 	public void FreecamToggle(Client player) 
 	{
