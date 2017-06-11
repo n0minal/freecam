@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<meta>
+    <info name="Freecam script" author="Vektor" type="script"/>
+
+    <script src="fc_server.cs" type="server" lang="csharp" />
+    <script src="fc_client.js" type="client" lang="javascript" /> 
+</meta>
+
