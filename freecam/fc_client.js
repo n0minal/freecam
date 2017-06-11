@@ -7,6 +7,8 @@ var adown = false;
 var ddown = false;
 var shiftdown = false;
 var altdown = false;
+var freecamMode = false;
+var toggleControl = true;
 
 API.onKeyDown.connect(function (sender, e) 
 {
@@ -34,65 +36,68 @@ var lastPos = null;
 
 API.onUpdate.connect(function() 
 {
-	API.disableControlThisFrame(16);
-	API.disableControlThisFrame(17);
-	API.disableControlThisFrame(26);
-	API.disableControlThisFrame(24);
-
-	var camRot = API.getGameplayCamRot();
-	var camDir = API.getGameplayCamDir();
-
-	if(cam != null)
+	if(freecamMode == true && toggleControl == true)
 	{
-		var to = null;
-		var pos2 = null;
-		var camPos = API.getEntityPosition(CameraObject);
+		API.disableControlThisFrame(16);
+		API.disableControlThisFrame(17);
+		API.disableControlThisFrame(26);
+		API.disableControlThisFrame(24);
 
-		//API.sendChatMessage(camPos.X+" "+camPos.Y+" "+camPos.Z);
-		var multiply = 1;
-		if(shiftdown == true) multiply = 3;
-		if(altdown == true)multiply = 0.5;
+		var camRot = API.getGameplayCamRot();
+		var camDir = API.getGameplayCamDir();
 
-		if(wdown == true)
+		if(cam != null)
 		{
-			to = Vector3.Lerp(camPos, camPos.Add(camDir.Multiply(multiply)), 1.0);
-		}
-		if(sdown == true)
-		{
-			if(to != null)camPos = to;
-			to = Vector3.Lerp(camPos, camPos.Subtract(camDir.Multiply(multiply)), 1.0);
-		}
-		if(adown == true)
-		{
-			if(to != null)camPos = to;
-			pos2 = GetPositionInFront(multiply,camPos,camRot.Z,90);
-			to = Vector3.Lerp(camPos, pos2, 1.0);
-		}
-		if(ddown == true)
-		{
-			if(to != null)camPos = to;
-			pos2 = GetPositionInFront(multiply,camPos,camRot.Z,-90);
-			to = Vector3.Lerp(camPos, pos2, 1.0);
-		}
+			var to = null;
+			var pos2 = null;
+			var camPos = API.getEntityPosition(CameraObject);
 
-		if(to != null && CameraObject != null)API.setEntityPosition(CameraObject,to); //GTMP BUG: If the camera goes out from the streaming distace of the object's spawn position->System.NullReferenceException
+			//API.sendChatMessage(camPos.X+" "+camPos.Y+" "+camPos.Z);
+			var multiply = 1;
+			if(shiftdown == true) multiply = 3;
+			if(altdown == true)multiply = 0.5;
 
-		API.setEntityRotation(API.getLocalPlayer(),new Vector3(0.0,0.0,camRot.Z));
+			if(wdown == true)
+			{
+				to = Vector3.Lerp(camPos, camPos.Add(camDir.Multiply(multiply)), 1.0);
+			}
+			if(sdown == true)
+			{
+				if(to != null)camPos = to;
+				to = Vector3.Lerp(camPos, camPos.Subtract(camDir.Multiply(multiply)), 1.0);
+			}
+			if(adown == true)
+			{
+				if(to != null)camPos = to;
+				pos2 = GetPositionInFront(multiply,camPos,camRot.Z,90);
+				to = Vector3.Lerp(camPos, pos2, 1.0);
+			}
+			if(ddown == true)
+			{
+				if(to != null)camPos = to;
+				pos2 = GetPositionInFront(multiply,camPos,camRot.Z,-90);
+				to = Vector3.Lerp(camPos, pos2, 1.0);
+			}
 
-		if(camRot != API.getCameraRotation(cam))
-		{
-			API.setCameraRotation(cam,camRot);
+			if(to != null && CameraObject != null)API.setEntityPosition(CameraObject,to); //GTMP BUG: If the camera goes out from the streaming distace of the object's spawn position->System.NullReferenceException
+
+			API.setEntityRotation(API.getLocalPlayer(),new Vector3(0.0,0.0,camRot.Z));
+
+			if(camRot != API.getCameraRotation(cam))
+			{
+				API.setCameraRotation(cam,camRot);
+			}
+			//By not a pope
+			if(lastPos != null && camPos != null && lastPos.DistanceTo(camPos) > 100.0)API.callNative("_SET_FOCUS_AREA", camPos.X, camPos.Y, camPos.Z, lastPos.X, lastPos.Y, lastPos.Z);
+			lastPos = camPos;
 		}
-		//By not a pope
-		if(lastPos != null && camPos != null && lastPos.DistanceTo(camPos) > 100.0)API.callNative("_SET_FOCUS_AREA", camPos.X, camPos.Y, camPos.Z, lastPos.X, lastPos.Y, lastPos.Z);
-		lastPos = camPos;
 	}
 });
 
 
 API.onServerEventTrigger.connect(function (name, args) 
 {
-	if(name == "attachCamera")
+	if(name == "startFreecam")
 	{
 		CameraObject = args[0];
 		cam = API.createCamera(API.getEntityPosition(API.getLocalPlayer()), new Vector3(0.0,0.0,0.0));
@@ -101,6 +106,19 @@ API.onServerEventTrigger.connect(function (name, args)
 		API.setActiveCamera(cam);
 
 		API.callNative("DISPLAY_RADAR",false);
+		freecamMode = true;
+	}
+	if(name == "stopFreecam")
+	{
+		API.callNative("DISPLAY_RADAR",true);
+		freecamMode = false;
+		API.callNative("SET_FOCUS_ENTITY",API.getLocalPlayer());
+		cam = null;
+		API.setActiveCamera(null);
+	}
+	if(name == "toggleFreecamControls")
+	{
+		toggleControl = args[0];
 	}
 });
 
