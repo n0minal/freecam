@@ -2,12 +2,12 @@
 This resource was created for the MapEditor but it works by itself too.
 
 Exported functions:
-startFreecam(Client player); //Start the freecam
-stopFreecam(Client player); //Stop the freecam
-ToggleFreecamControls(Client player, bool toggle); //The camera will stop moving, good for opening dialogs etc.
+startFreecam(Client player);
+stopFreecam(Client player);
+ToggleFreecamControls(Client player, bool toggle);
 bool isFreecamControlsEnabled(Client player);
 bool isFreecamOn(Client player);
-NetHandle getFreecamObject(Client player); //Returns the object the player's cam attached to.
+NetHandle getFreecamObject(Client player); 
 
 Controls:
 W, A, S, D - Movement
