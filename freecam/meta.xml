@@ -5,11 +5,11 @@
     <script src="fc_server.cs" type="server" lang="csharp" />
     <script src="fc_client.js" type="client" lang="javascript" /> 
 
-    <export function="startFreecam" />
-    <export function="stopFreecam" />
-    <export function="ToggleFreecamControls" />
-    <export function="isFreecamControlsEnabled" />
-    <export function="isFreecamOn" />
-    <export function="getFreeCamObject" />
+    <export class="FreeCam" function="startFreecam" />
+    <export class="FreeCam" function="stopFreecam" />
+    <export class="FreeCam" function="ToggleFreecamControls" />
+    <export class="FreeCam" function="isFreecamControlsEnabled" />
+    <export class="FreeCam" function="isFreecamOn" />
+    <export class="FreeCam" function="getFreecamObject" />
 </meta>
 
