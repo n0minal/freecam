@@ -2,8 +2,8 @@
 <meta>
     <info name="Freecam script" author="Vektor" type="script"/>
 
-    <script src="fc_server.cs" type="server" lang="csharp" />
-    <script src="fc_client.js" type="client" lang="javascript" /> 
+    <script src="server/fc_server.cs" type="server" lang="csharp" />
+    <script src="client/fc_client.js" type="client" lang="javascript" /> 
 
     <export class="FreeCam" function="startFreecam" />
     <export class="FreeCam" function="stopFreecam" />
