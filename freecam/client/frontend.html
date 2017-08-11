@@ -1,0 +1,49 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <div class="box">
+            <h1 class="title">Info</h1>
+            <span id="ipl" class="text-info">IPL: None</span><br />
+            <span id="dimension" class="text-info">Dimension: 0</span><br />
+            <span id="pos" class="text-info">Position: new Vector3(0000.0000, 0000.0000, 0000.0000)</span><br />
+            <span id="rot" class="text-info">Rotation: new Vector3(0000.0000, 0000.0000, 0000.0000)</span><br />
+            <span id="campos" class="text-info">Camera Position: new Vector3(0000.0000, 0000.0000, 0000.0000)</span><br />
+            <span id="camrot" class="text-info">Camera Rotation: new Vector3(0000.0000, 0000.0000, 0000.0000)</span><br />
+            <span class="text-info2">Use /saveinfo [description] to save the current info!</span>
+        </div>
+    </body>
+    <script>
+        function updateField(field, data){
+            data = JSON.parse(data);
+
+            switch(field){
+                case 'ipl':{
+                    document.getElementById("ipl").innerHTML = "IPL: " + data.ipl;
+                    break;
+                }
+                case 'dimension':{
+                    document.getElementById("dimension").innerHTML = "Dimension: " + data.dimension;
+                    break;
+                }
+                case 'pos':{
+                    document.getElementById("pos").innerHTML = "Position: " + data.pos;
+                    break;
+                }
+                case 'rot':{
+                    document.getElementById("rot").innerHTML = "Rotation: Vector3(" + data.rot;
+                    break;
+                }
+                case 'campos':{
+                    document.getElementById("campos").innerHTML = "IPL" + data.campos;
+                    break;
+                }
+                case 'camrot':{
+                    document.getElementById("camrot").innerHTML = "IPL" + data.camrot;
+                    break;
+                }
+            }
+        }
+    </script>
+</html>

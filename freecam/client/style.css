@@ -1,0 +1,26 @@
+body{
+    background: transparent;
+    margin: 0;
+    width: 400px;
+}
+
+.box{
+    background-color: rgba(0,0,0,.6);    
+    padding: 5px;
+    color: white;
+    font-family: Verdana;
+}
+
+.title{
+    color: gold;
+    font-size: 14px;
+}
+
+.text-info{
+    font-size: 10px;
+}
+
+.text-info2{
+    font-size: 10px;
+    color: palegreen;
+}
