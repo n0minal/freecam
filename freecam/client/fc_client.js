@@ -9,6 +9,14 @@ var shiftdown = false;
 var altdown = false;
 var freecamMode = false;
 var toggleControl = true;
+var lastPos = null;
+
+var res = API.getScreenResolution();
+var infoBrowser = API.createCefBrowser(res.Width, res.Height, true);
+API.waitUntilCefBrowserInit(infoBrowser);
+API.setCefBrowserPosition(infoBrowser, 0, 0);
+API.loadPageCefBrowser(infoBrowser, "frontend.html");
+
 
 API.onKeyDown.connect(function (sender, e) 
 {
@@ -16,9 +24,6 @@ API.onKeyDown.connect(function (sender, e)
 	if (e.KeyCode === Keys.A)adown = true;
 	if (e.KeyCode === Keys.S)sdown = true;
 	if (e.KeyCode === Keys.D)ddown = true;
-
-	if (e.KeyCode === Keys.RShiftKey ||e.KeyCode === Keys.ShiftKey)shiftdown = true;
-	if (e.KeyCode === Keys.Menu ||e.KeyCode === Keys.RMenu)altdown = true;
 });
 
 API.onKeyUp.connect(function (sender, e) 
@@ -27,15 +32,20 @@ API.onKeyUp.connect(function (sender, e)
 	if (e.KeyCode === Keys.A)adown = false;
 	if (e.KeyCode === Keys.S)sdown = false;
 	if (e.KeyCode === Keys.D)ddown = false;
-
-	if (e.KeyCode === Keys.RShiftKey ||e.KeyCode === Keys.ShiftKey)shiftdown = false;
-	if (e.KeyCode === Keys.Menu ||e.KeyCode === Keys.RMenu)altdown = false;
 });
 
-var lastPos = null;
 
 API.onUpdate.connect(function() 
 {
+	//send updated data to frontend
+	var player = API.getLocalPlayer();
+	var pos = API.getEntityPosition(player);
+	var rot = API.getEntityRotation(player);
+	var dimension = API.getEntityDimension(player);
+	var camPos = API.getCameraPosition(cam);
+	var camRot = API.getGameplayCamRot();
+	var camDir = API.getGameplayCamDir();
+
 	if(freecamMode == true && toggleControl == true)
 	{
 		API.disableControlThisFrame(16);
@@ -43,82 +53,92 @@ API.onUpdate.connect(function()
 		API.disableControlThisFrame(26);
 		API.disableControlThisFrame(24);
 
-		var camRot = API.getGameplayCamRot();
-		var camDir = API.getGameplayCamDir();
-
 		if(cam != null)
 		{
-			var to = null;
+			var targetPos = null;
 			var pos2 = null;
-			var camPos = API.getEntityPosition(CameraObject);
 
-			//API.sendChatMessage(camPos.X+" "+camPos.Y+" "+camPos.Z);
-			var multiply = 1;
-			if(shiftdown == true) multiply = 3;
-			if(altdown == true)multiply = 0.5;
+			var multiplier = 1;
+
+			if(API.isControlJustPressed(19)){
+				multiplier = 5.0;
+			}
+			else if(API.isControlJustPressed(21)){
+				multiplier = 0.5;
+			}
 
 			if(wdown == true)
 			{
-				to = Vector3.Lerp(camPos, camPos.Add(camDir.Multiply(multiply)), 1.0);
+				targetPos = Vector3.Lerp(camPos, camPos.Add(camDir.Multiply(multiplier)), 1.0);
 			}
 			if(sdown == true)
 			{
-				if(to != null)camPos = to;
-				to = Vector3.Lerp(camPos, camPos.Subtract(camDir.Multiply(multiply)), 1.0);
+				if(targetPos != null) camPos = targetPos;
+				targetPos = Vector3.Lerp(camPos, camPos.Subtract(camDir.Multiply(multiplier)), 1.0);
 			}
 			if(adown == true)
 			{
-				if(to != null)camPos = to;
-				pos2 = getPositionInFront(multiply,camPos,camRot.Z,90);
-				to = Vector3.Lerp(camPos, pos2, 1.0);
+				if(targetPos != null) camPos = targetPos;
+				pos2 = getPositionInFront(multiplier, camPos, camRot.Z, 90);
+				targetPos = Vector3.Lerp(camPos, pos2, 1.0);
 			}
 			if(ddown == true)
 			{
-				if(to != null)camPos = to;
-				pos2 = getPositionInFront(multiply,camPos,camRot.Z,-90);
-				to = Vector3.Lerp(camPos, pos2, 1.0);
+				if(targetPos != null)camPos = targetPos;
+				pos2 = getPositionInFront(multiplier, camPos, camRot.Z, -90);
+				targetPos = Vector3.Lerp(camPos, pos2, 1.0);
 			}
 
-			if(to != null && CameraObject != null)
+			if(targetPos != null)
 			{
-				API.triggerServerEvent("setFreecamObjectPositionTo",to);
-				//API.setEntityPosition(CameraObject,to); //GTMP BUG: If the camera goes out from the streaming distace of the object's spawn position->System.NullReferenceException
+				API.setCameraPosition(cam, targetPos);
 			}
 
 			API.setEntityRotation(API.getLocalPlayer(),new Vector3(0.0,0.0,camRot.Z));
 
 			if(camRot != API.getCameraRotation(cam))
 			{
-				API.setCameraRotation(cam,camRot);
+				API.setCameraRotation(cam, camRot);
 			}
-			//By not a pope
-			if(lastPos != null && camPos != null && lastPos.DistanceTo(camPos) > 100.0)API.callNative("_SET_FOCUS_AREA", camPos.X, camPos.Y, camPos.Z, lastPos.X, lastPos.Y, lastPos.Z);
+			//update camera focus data
+			if(lastPos != null && camPos != null && lastPos.DistanceTo(camPos) > 100.0) API.callNative("_SET_FOCUS_AREA", camPos.X, camPos.Y, camPos.Z, lastPos.X, lastPos.Y, lastPos.Z);
 			lastPos = camPos;
 		}
 	}
+	//send updated data to front-end
+	var updateData = {
+		"dimension": dimension,
+		"pos": pos,
+		"rot": rot,
+		"camPos": camPos,
+		"camRot": camRot,
+		"camDir": camDir,
+	}
+	var obj = JSON.stringify(updateData);
+	API.resourceCall("update", obj);
 });
 
 
 API.onServerEventTrigger.connect(function (name, args) 
 {
-	if(name == "startFreecam")
+	if(name == "setFreeCamState")
 	{
-		CameraObject = args[0];
-		cam = API.createCamera(API.getEntityPosition(API.getLocalPlayer()), new Vector3(0.0,0.0,0.0));
-		API.attachCameraToEntity(cam,CameraObject,new Vector3(0.0,0.0,0.0)); //GTMP BUG: getting the camera position returns null, so i had to attach the camera to an object and move that instead
-		API.setEntityCollisionless(CameraObject, true);
-		API.setActiveCamera(cam);
+		var active = args[0];
+		var player = API.getLocalPlayer();
 
-		API.callNative("DISPLAY_RADAR",false);
-		freecamMode = true;
-	}
-	if(name == "stopFreecam")
-	{
-		API.callNative("DISPLAY_RADAR",true);
-		freecamMode = false;
-		API.callNative("SET_FOCUS_ENTITY",API.getLocalPlayer());
-		cam = null;
-		API.setActiveCamera(null);
+		if(active){
+			cam = API.createCamera(API.getEntityPosition(player), API.getEntityRotation(player));
+			freecamMode = true;
+			API.setActiveCamera(cam);
+			API.callNative("DISPLAY_RADAR", false);
+		}
+		else{
+			cam = null;
+			freecamMode = false;
+			API.setActiveCamera(null);
+			API.callNative("DISPLAY_RADAR",true);
+			API.callNative("SET_FOCUS_ENTITY",API.getLocalPlayer());
+		}		
 	}
 	if(name == "toggleFreecamControls")
 	{

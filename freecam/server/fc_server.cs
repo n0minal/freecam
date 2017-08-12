@@ -13,105 +13,48 @@ using System.Threading;
 
 public class FreeCam : Script
 {
-	private Dictionary<Client, NetHandle> _playerObjectPairs = new Dictionary<Client, NetHandle>();
-	private Dictionary<Client, bool> _freecamControlsDisabled = new Dictionary<Client, bool>();
+	private Dictionary<Client, bool> freeCamActive = new Dictionary<Client, bool>();
+	private Dictionary<Client, bool> freeCamControlsDisabled = new Dictionary<Client, bool>();
 
-	public FreeCam()
-	{
-		API.onPlayerFinishedDownload += onPlayerDownloaded;
-		API.onPlayerDisconnected += OnPlayerDisconnectedHandler;
-		API.onClientEventTrigger += OnClientEvent;
-	}
-
-	public void OnClientEvent(Client player, string eventName, params object[] arguments)
-	{
-		if (eventName == "setFreecamObjectPositionTo")//object movement sync
-		{
-			Vector3 to = (Vector3)arguments[0];
-			if(_playerObjectPairs.ContainsKey(player))API.setEntityPosition(_playerObjectPairs[player], to);
-		}
-	}
-
-	private void OnPlayerDisconnectedHandler(Client player, string reason)
-	{
-		_playerObjectPairs.Remove(player);
-	}
-
-	private void onPlayerDownloaded(Client player)//first spawn
-	{
-		//startFreecam(player);
-	}
-
-	public void startFreecam(Client player)
-	{
-		if(_playerObjectPairs.ContainsKey(player))stopFreecam(player);
-		NetHandle obj = API.createObject(-1358020705, API.getEntityPosition(player), new Vector3(0.0, 0.0, 0.0)); //We create the object from server side, so later if we want to sync the object's position we can send the pos back here.
-		_playerObjectPairs.Add(player, obj);
-
-		API.triggerClientEvent(player, "startFreecam", obj);
-
-		API.freezePlayer(player, true);
-		API.setEntityPosition(player, new Vector3(0.0, 0.0, 200.0));
-		API.setEntityTransparency(player, 0);
-	}
-
-	public void stopFreecam(Client player)
-	{
-		if(_playerObjectPairs.ContainsKey(player))
-		{
-			API.deleteEntity(_playerObjectPairs[player]);
-			_playerObjectPairs.Remove(player);
-
-			API.triggerClientEvent(player, "stopFreecam");
-
-			API.freezePlayer(player, false);
-			API.setEntityPosition(player, new Vector3(0.0, 0.0, 80.0));
-			API.setEntityTransparency(player, 255);
-		}
+	public void setFreeCamState(Client player, bool active){
+		API.freezePlayer(player, active ? true : false);
+		API.setEntityTransparency(player, active ? 0 : 255);
+		API.triggerClientEvent(player, "setFreeCamState", active ? true : false);
 	}
 
 	public void toggleFreecamControls(Client player, bool toggle)
 	{
-		if(toggle && !_freecamControlsDisabled.ContainsKey(player))
+		if(toggle && !freeCamControlsDisabled.ContainsKey(player))
 		{
-			_freecamControlsDisabled.Add(player, true);
+			freeCamControlsDisabled.Add(player, true);
 			API.triggerClientEvent(player, "toggleFreecamControls", true);
 		}
 		else
 		{
-			_freecamControlsDisabled.Remove(player);
+			freeCamControlsDisabled.Remove(player);
 			API.triggerClientEvent(player, "toggleFreecamControls", false);
 		}
 	}
 
 	public bool isFreecamControlsEnabled(Client player)
 	{
-		return !_freecamControlsDisabled.ContainsKey(player);
+		return freeCamControlsDisabled.ContainsKey(player);
 	}
 
-	public bool isFreecamOn(Client player)
+	public bool isFreecamActive(Client player)
 	{
-		return _playerObjectPairs.ContainsKey(player);
-	}
-
-	public NetHandle getFreecamObject(Client player)
-	{
-		if(_playerObjectPairs.ContainsKey(player))return _playerObjectPairs[player];
-		else return new NetHandle();
+		return freeCamActive.ContainsKey(player);
 	}
 
 	[Command("freecam")]
 	public void FreecamToggle(Client player) 
 	{
-		if(isFreecamOn(player))stopFreecam(player);
-		else startFreecam(player);
+		setFreeCamState(player, isFreecamActive(player) ? false : true);
 	}
 
-	[Command("controls")]
+	[Command("control")]
 	public void ControlsToggle(Client player) 
 	{
-		if(isFreecamControlsEnabled(player))toggleFreecamControls(player, true);
-		else toggleFreecamControls(player, false);
+		toggleFreecamControls(player, isFreecamControlsEnabled(player) ? false : true);
 	}
-
 }
