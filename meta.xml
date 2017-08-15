@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<meta>
+    <info name="Freecam script" author="Vektor and n0minal" type="script"/>
+
+    <script src="server/fc_server.cs" type="server" lang="csharp" />
+    <script src="client/fc_client.js" type="client" lang="javascript" /> 
+	
+	<file src="client/frontend.html" />
+	<file src="client/style.css" />
+	
+    <export class="FreeCam" function="setFreeCamState" />
+    <export class="FreeCam" function="ToggleFreecamControls" />
+    <export class="FreeCam" function="isFreecamControlsEnabled" />
+    <export class="FreeCam" function="isFreecamActive" />
+</meta>
+
