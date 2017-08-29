@@ -10,30 +10,42 @@ var altdown = false;
 var freecamMode = false;
 var toggleControl = true;
 var lastPos = null;
+var infoBrowser = null;
 
-var res = API.getScreenResolution();
-var infoBrowser = API.createCefBrowser(res.Width, res.Height, true);
-API.waitUntilCefBrowserInit(infoBrowser);
-API.setCefBrowserPosition(infoBrowser, 0, 0);
-API.loadPageCefBrowser(infoBrowser, "frontend.html");
-
+API.onResourceStart.connect(function(){		
+	var res = API.getScreenResolution();
+	infoBrowser = API.createCefBrowser(res.Width, res.Height, true);
+	API.waitUntilCefBrowserInit(infoBrowser);
+	API.setCefBrowserPosition(infoBrowser, 0, 0);
+	API.loadPageCefBrowser(infoBrowser, "/client/frontend.html");
+	API.setCefBrowserHeadless(infoBrowser, false);
+});
 
 API.onKeyDown.connect(function (sender, e) 
 {
+	API.sendChatMessage("Key down: " + e.KeyCode);
 	if (e.KeyCode === Keys.W)wdown = true;
 	if (e.KeyCode === Keys.A)adown = true;
 	if (e.KeyCode === Keys.S)sdown = true;
 	if (e.KeyCode === Keys.D)ddown = true;
+
+	if (e.KeyCode === Keys.LShiftKey){
+		shiftdown = true;
+	}
+	else if(e.KeyCode === Keys.LMenu)altdown = true;
 });
 
 API.onKeyUp.connect(function (sender, e) 
 {
+	API.sendChatMessage("Key up: " + e.KeyCode);
 	if (e.KeyCode === Keys.W)wdown = false;
 	if (e.KeyCode === Keys.A)adown = false;
 	if (e.KeyCode === Keys.S)sdown = false;
 	if (e.KeyCode === Keys.D)ddown = false;
-});
 
+	if(e.KeyCode === Keys.LShiftKey)shiftdown = false;
+	if(e.KeyCode === Keys.LMenu)altdown = false;
+});
 
 API.onUpdate.connect(function() 
 {
@@ -60,13 +72,11 @@ API.onUpdate.connect(function()
 
 			var multiplier = 1;
 
-			if(API.isControlJustPressed(19)){
-				multiplier = 5.0;
-			}
-			else if(API.isControlJustPressed(21)){
-				multiplier = 0.5;
-			}
-
+			if(shiftdown) multiplier = 5.0;
+			else if(altdown) multiplier = 0.5;
+			
+			API.sendChatMessage("Multiplier : " + multiplier);
+			
 			if(wdown == true)
 			{
 				targetPos = Vector3.Lerp(camPos, camPos.Add(camDir.Multiply(multiplier)), 1.0);
@@ -105,17 +115,19 @@ API.onUpdate.connect(function()
 			lastPos = camPos;
 		}
 	}
-	//send updated data to front-end
-	var updateData = {
-		"dimension": dimension,
-		"pos": pos,
-		"rot": rot,
-		"camPos": camPos,
-		"camRot": camRot,
-		"camDir": camDir,
-	}
-	var obj = JSON.stringify(updateData);
-	API.resourceCall("update", obj);
+	if(API.isCefBrowserInitialized(infoBrowser)){
+		//send updated data to front-end
+		var updateData = {
+			"dimension": dimension,
+			"pos": pos,
+			"rot": rot,
+			"camPos": camPos,
+			"camRot": camRot,
+			"camDir": camDir,
+		}
+		var obj = JSON.stringify(updateData);
+		infoBrowser.call("update", obj);
+	}	
 });
 
 
