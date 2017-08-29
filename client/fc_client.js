@@ -11,6 +11,8 @@ var freecamMode = false;
 var toggleControl = true;
 var lastPos = null;
 var infoBrowser = null;
+var multiplier = 1.0;
+var targetPos = null;
 
 API.onResourceStart.connect(function(){		
 	var res = API.getScreenResolution();
@@ -23,33 +25,33 @@ API.onResourceStart.connect(function(){
 
 API.onKeyDown.connect(function (sender, e) 
 {
-	API.sendChatMessage("Key down: " + e.KeyCode);
 	if (e.KeyCode === Keys.W)wdown = true;
 	if (e.KeyCode === Keys.A)adown = true;
 	if (e.KeyCode === Keys.S)sdown = true;
 	if (e.KeyCode === Keys.D)ddown = true;
 
-	if (e.KeyCode === Keys.LShiftKey){
-		shiftdown = true;
+	if (e.KeyCode === Keys.Space){
+		multiplier = 5.0;
+		API.sendChatMessage("Speed is now ~r~5.0!");
 	}
-	else if(e.KeyCode === Keys.LMenu)altdown = true;
 });
 
 API.onKeyUp.connect(function (sender, e) 
 {
-	API.sendChatMessage("Key up: " + e.KeyCode);
 	if (e.KeyCode === Keys.W)wdown = false;
 	if (e.KeyCode === Keys.A)adown = false;
 	if (e.KeyCode === Keys.S)sdown = false;
 	if (e.KeyCode === Keys.D)ddown = false;
 
-	if(e.KeyCode === Keys.LShiftKey)shiftdown = false;
-	if(e.KeyCode === Keys.LMenu)altdown = false;
+	if(e.KeyCode === Keys.Space){
+		multiplier = 1.0;
+		API.sendChatMessage("Speed is now ~r~1.0!");
+	} 
 });
 
 API.onUpdate.connect(function() 
 {
-	//send updated data to frontend
+	if(cam == null) return 0;
 	var player = API.getLocalPlayer();
 	var pos = API.getEntityPosition(player);
 	var rot = API.getEntityRotation(player);
@@ -67,15 +69,7 @@ API.onUpdate.connect(function()
 
 		if(cam != null)
 		{
-			var targetPos = null;
 			var pos2 = null;
-
-			var multiplier = 1;
-
-			if(shiftdown) multiplier = 5.0;
-			else if(altdown) multiplier = 0.5;
-			
-			API.sendChatMessage("Multiplier : " + multiplier);
 			
 			if(wdown == true)
 			{
@@ -102,6 +96,7 @@ API.onUpdate.connect(function()
 			if(targetPos != null)
 			{
 				API.setCameraPosition(cam, targetPos);
+				API.setEntityPosition(player, camPos);
 			}
 
 			API.setEntityRotation(API.getLocalPlayer(),new Vector3(0.0,0.0,camRot.Z));
@@ -114,20 +109,38 @@ API.onUpdate.connect(function()
 			if(lastPos != null && camPos != null && lastPos.DistanceTo(camPos) > 100.0) API.callNative("_SET_FOCUS_AREA", camPos.X, camPos.Y, camPos.Z, lastPos.X, lastPos.Y, lastPos.Z);
 			lastPos = camPos;
 		}
-	}
-	if(API.isCefBrowserInitialized(infoBrowser)){
-		//send updated data to front-end
-		var updateData = {
-			"dimension": dimension,
-			"pos": pos,
-			"rot": rot,
-			"camPos": camPos,
-			"camRot": camRot,
-			"camDir": camDir,
-		}
-		var obj = JSON.stringify(updateData);
-		infoBrowser.call("update", obj);
 	}	
+	//send updated data to front-end
+	var updateData = {
+		"dimension": dimension,
+		"pos": {
+			"X": pos.X,
+			"Y": pos.Y,
+			"Z": pos.Z
+		},
+		"rot": {
+			"X": rot.X,
+			"Y": rot.Y,
+			"Z": rot.Z
+		},
+		"camPos": {
+			"X": camPos.X,
+			"Y": camPos.Y,
+			"Z": camPos.Z
+		},
+		"camRot": {
+			"X": camRot.X,
+			"Y": camRot.Y,
+			"Z": camRot.Z
+		},
+		"camDir": {
+			"X": camDir.X,
+			"Y": camDir.Y,
+			"Z": camDir.Z
+		},
+	}
+	infoBrowser.call("update", JSON.stringify(updateData));
+	
 });
 
 
