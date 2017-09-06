@@ -17,9 +17,18 @@ public class FreeCam : Script
 	private Dictionary<Client, bool> freeCamControlsDisabled = new Dictionary<Client, bool>();
 
 	public void setFreeCamState(Client player, bool active){
-		API.freezePlayer(player, active ? true : false);
-		API.setEntityTransparency(player, active ? 0 : 255);
-		API.triggerClientEvent(player, "setFreeCamState", active ? true : false);
+		if(active){
+			freeCamActive.Add(player, true);
+			API.setEntityTransparency(player, 0);
+			API.triggerClientEvent(player, "setFreeCamState", true);
+			API.freezePlayer(player, true);
+		}
+		else{
+			freeCamActive.Remove(player);
+			API.setEntityTransparency(player, 255);
+			API.triggerClientEvent(player, "setFreeCamState", false);
+			API.freezePlayer(player, false);
+		}		
 	}
 
 	public void toggleFreecamControls(Client player, bool toggle)
@@ -38,23 +47,35 @@ public class FreeCam : Script
 
 	public bool isFreecamControlsEnabled(Client player)
 	{
-		return freeCamControlsDisabled.ContainsKey(player);
+		if(freeCamControlsDisabled.ContainsKey(player) == true) return true;
+		return false;
 	}
 
 	public bool isFreecamActive(Client player)
 	{
-		return freeCamActive.ContainsKey(player);
+		if(freeCamActive.ContainsKey(player)) return true;
+		return false;
 	}
 
 	[Command("freecam")]
 	public void FreecamToggle(Client player) 
 	{
-		setFreeCamState(player, isFreecamActive(player) ? false : true);
+		if(isFreecamActive(player) == true){
+			setFreeCamState(player, false);
+		}
+		else{
+			setFreeCamState(player, true);
+		}
 	}
 
-	[Command("control")]
+	[Command("controls")]
 	public void ControlsToggle(Client player) 
 	{
-		toggleFreecamControls(player, isFreecamControlsEnabled(player) ? false : true);
+		if(isFreecamControlsEnabled(player)){
+			toggleFreecamControls(player, false);
+		}
+		else{
+			toggleFreecamControls(player, true);
+		}
 	}
 }

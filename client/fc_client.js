@@ -20,7 +20,7 @@ API.onResourceStart.connect(function(){
 	API.waitUntilCefBrowserInit(infoBrowser);
 	API.setCefBrowserPosition(infoBrowser, 0, 0);
 	API.loadPageCefBrowser(infoBrowser, "/client/frontend.html");
-	API.setCefBrowserHeadless(infoBrowser, false);
+	API.setCefBrowserHeadless(infoBrowser, true);
 });
 
 API.onKeyDown.connect(function (sender, e) 
@@ -32,7 +32,6 @@ API.onKeyDown.connect(function (sender, e)
 
 	if (e.KeyCode === Keys.Space){
 		multiplier = 5.0;
-		API.sendChatMessage("Speed is now ~r~5.0!");
 	}
 });
 
@@ -45,7 +44,6 @@ API.onKeyUp.connect(function (sender, e)
 
 	if(e.KeyCode === Keys.Space){
 		multiplier = 1.0;
-		API.sendChatMessage("Speed is now ~r~1.0!");
 	} 
 });
 
@@ -152,17 +150,22 @@ API.onServerEventTrigger.connect(function (name, args)
 		var player = API.getLocalPlayer();
 
 		if(active){
+			API.setCefBrowserHeadless(infoBrowser, false);
 			cam = API.createCamera(API.getEntityPosition(player), API.getEntityRotation(player));
 			freecamMode = true;
 			API.setActiveCamera(cam);
 			API.callNative("DISPLAY_RADAR", false);
+			API.sendChatMessage("Freecam has been ~r~activated~w~!");
+			API.sendChatMessage("[~y~HINT~w~]: Hold ~b~SPACE KEY~w~ to increase the camera speed!");
 		}
 		else{
+			API.setCefBrowserHeadless(infoBrowser, true);
 			cam = null;
 			freecamMode = false;
 			API.setActiveCamera(null);
 			API.callNative("DISPLAY_RADAR",true);
 			API.callNative("SET_FOCUS_ENTITY",API.getLocalPlayer());
+			API.sendChatMessage("Freecam has been ~r~deactivated~w~!");
 		}		
 	}
 	if(name == "toggleFreecamControls")
