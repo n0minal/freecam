@@ -103,12 +103,10 @@ API.onUpdate.connect(function()
 			{
 				API.setCameraRotation(cam, camRot);
 			}
-			//update camera focus data
 			if(lastPos != null && camPos != null && lastPos.DistanceTo(camPos) > 100.0) API.callNative("_SET_FOCUS_AREA", camPos.X, camPos.Y, camPos.Z, lastPos.X, lastPos.Y, lastPos.Z);
 			lastPos = camPos;
 		}
 	}	
-	//send updated data to front-end
 	var updateData = {
 		"dimension": dimension,
 		"pos": {
